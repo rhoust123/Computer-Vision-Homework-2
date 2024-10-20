@@ -11,14 +11,11 @@ import scipy.ndimage
 from skimage import img_as_float32
 from skimage import io
 
-
 # Read in images and call functions per problem
 def Begin_Homework():
     #Problem_One()
     Problem_Two()
     
-
-
 # 2D Transformation: Compute the coordinate of a 2D point p = (10, 20)^T using a rotation of 45 degrees about the x-axis, and a translation of t = (40, -30)^T. Answer/Explain the following: 
 
 # 3D Transformation: A camera is located at point (0, -5, 3) in the world frame. The camera is tilted down by 30 degrees from the horizontal. We want to find the 4x4 homogeneous transformation C_H_W from the world frame {W} (A) to the camera frame {C} (B). Note that in "the world" Z is up (X-Y ground plane) but in "the camera", Z is out (X-Y image plane). 
@@ -147,12 +144,16 @@ def Problem_Two():
     # in a given directory. Since no path is 
     # specified, it will take current directory 
     # jpg files alone 
-    images = os.path.join(os.getcwd(), "images/")
-    print(images)
+    images = glob.glob('images/' + '*.jpg') 
+
+    counter = 0
   
     for filename in images: 
-        print(filename)
-        image = cv2.imread(filename) 
+
+        print("Processing image:", filename)
+        print("This many images left:", len(images) - counter)
+
+        image = cv2.imread(filename)
 
         if image is None:
             print("Error: Image not loaded. Check filepath.")
@@ -160,6 +161,7 @@ def Problem_Two():
         else:
             grayColor = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) 
     
+        print("Finding corners for:", filename)
         # Find the chess board corners 
         # If desired number of corners are 
         # found in the image then ret = true 
@@ -169,6 +171,7 @@ def Problem_Two():
                         + cv2.CALIB_CB_FAST_CHECK + 
                         cv2.CALIB_CB_NORMALIZE_IMAGE) 
     
+        print("Refining pixel coordinates for:", filename)
         # If desired number of corners can be detected then, 
         # refine the pixel coordinates and display 
         # them on the images of checker board 
@@ -186,6 +189,8 @@ def Problem_Two():
             image = cv2.drawChessboardCorners(image,  
                                             CHECKERBOARD,  
                                             corners2, ret) 
+            
+        counter += 1
   
     cv2.imshow('img', image) 
     cv2.waitKey(0) 
@@ -216,10 +221,6 @@ def Problem_Two():
     print("\n Translation Vectors:") 
     print(t_vecs) 
     
-
-
-    
-
 
 # MAIN
 Begin_Homework()

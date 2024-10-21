@@ -117,7 +117,7 @@ def Problem_Two():
     # Citation: The code shown here is largely derived from the geeks for geeks url above. The author is priyarajtt.
 
     # Define the dimensions of checkerboard 
-    CHECKERBOARD = (6, 8) 
+    CHECKERBOARD = (7, 5) 
     
     # stop the iteration when specified 
     # accuracy, epsilon, is reached or 
@@ -145,13 +145,8 @@ def Problem_Two():
     # specified, it will take current directory 
     # jpg files alone 
     images = glob.glob('images/' + '*.jpg') 
-
-    counter = 0
   
     for filename in images: 
-
-        print("Processing image:", filename)
-        print("This many images left:", len(images) - counter)
 
         image = cv2.imread(filename)
 
@@ -161,7 +156,6 @@ def Problem_Two():
         else:
             grayColor = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) 
     
-        print("Finding corners for:", filename)
         # Find the chess board corners 
         # If desired number of corners are 
         # found in the image then ret = true 
@@ -171,7 +165,6 @@ def Problem_Two():
                         + cv2.CALIB_CB_FAST_CHECK + 
                         cv2.CALIB_CB_NORMALIZE_IMAGE) 
     
-        print("Refining pixel coordinates for:", filename)
         # If desired number of corners can be detected then, 
         # refine the pixel coordinates and display 
         # them on the images of checker board 
@@ -189,9 +182,10 @@ def Problem_Two():
             image = cv2.drawChessboardCorners(image,  
                                             CHECKERBOARD,  
                                             corners2, ret) 
-            
-        counter += 1
-  
+        
+        else: 
+            print("ret was false for image:", filename)
+              
     cv2.imshow('img', image) 
     cv2.waitKey(0) 
   
@@ -199,13 +193,17 @@ def Problem_Two():
     
     h, w = image.shape[:2] 
     
-    
+    print("Performing camera calibration")
     # Perform camera calibration by 
     # passing the value of above found out 3D points (threedpoints) 
     # and its corresponding pixel coordinates of the 
     # detected corners (twodpoints) 
-    ret, matrix, distortion, r_vecs, t_vecs = cv2.calibrateCamera( 
-        threedpoints, twodpoints, grayColor.shape[::-1], None, None) 
+    if len(threedpoints) == 0 or len(twodpoints) == 0:
+        print("no valid data")
+        return
+    else:
+        ret, matrix, distortion, r_vecs, t_vecs = cv2.calibrateCamera( 
+            threedpoints, twodpoints, grayColor.shape[::-1], None, None) 
     
     
     # Displaying required output 

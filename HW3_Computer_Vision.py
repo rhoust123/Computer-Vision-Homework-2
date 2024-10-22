@@ -220,8 +220,33 @@ def Problem_Two():
     print("\n Translation Vectors:") 
     print(t_vecs) 
     
-def ProblemThree(): 
-    return 
+def Problem_Three(): 
+    
+    A = (1,1)
+    B = (1.5, 0.5)
+    C = (2, 1)
+    D = (2.5, 2)
+    Ap = (-0.9, 0.8)
+    Bp = (-0.1, 1.3)
+    Cp = (-0.4, 1.9)
+    Dp = (-1.25, 2.55)
+
+    # Rewrite the equation MX ~= X'
+    print("\nPair of Linear Equations Describing MX ~= X':")
+    print("{x*m11 + y*m12 + 0*m21 + 0*m22 = x'}")
+    print("{0*m11 + 0*m12 + x*m21 + y*m22 = y'}\n")
+
+    # Print out Q and b
+    Q = np.array([[A[0],A[1],0,0],[0,0,A[0],A[1]],[B[0],B[1],0,0],[0,0,B[0],B[1]],[C[0],C[1],0,0],[0,0,C[0],C[1]],[D[0],D[1],0,0],[0,0,D[0],D[1]]])
+    print("\n8x4 Matrix Q:\n", Q)
+
+    b = np.array([-0.9, 0.8, -0.1, 1.3, -0.4, 1.9, -1.25, 2.55]).T
+    print("\n8x1 Matrix b:\n", b)
+           
+    # Find solution vector m
+    m = np.linalg.lstsq(Q, b)
+    print(m)
+
 
 # MAIN
 Begin_Homework()

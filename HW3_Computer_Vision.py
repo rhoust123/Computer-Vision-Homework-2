@@ -237,16 +237,19 @@ def Problem_Three():
     print("{0*m11 + 0*m12 + x*m21 + y*m22 = y'}\n")
 
     # Print out Q and b
-    Q = np.array([[A[0],A[1],0,0],[0,0,A[0],A[1]],[B[0],B[1],0,0],[0,0,B[0],B[1]],[C[0],C[1],0,0],[0,0,C[0],C[1]],[D[0],D[1],0,0],[0,0,D[0],D[1]]])
+    Q = np.array([[A[0],A[1],0,0],[0,0,A[0],A[1]],[B[0],B[1],0,0],[0,0,B[0],B[1]],
+                  [C[0],C[1],0,0],[0,0,C[0],C[1]],[D[0],D[1],0,0],[0,0,D[0],D[1]]])
+
     print("\n8x4 Matrix Q:\n", Q)
 
-    b = np.array([-0.9, 0.8, -0.1, 1.3, -0.4, 1.9, -1.25, 2.55]).T
+    b = np.array([Ap[0], Ap[1], Bp[0], Bp[1], Cp[0], Cp[1], Dp[0], Dp[1]]).T
     print("\n8x1 Matrix b:\n", b)
            
-    # Find solution vector m
-    m = np.linalg.lstsq(Q, b)
-    print(m)
+    # Find solution vector m and reshape to be 2x2
+    m, resid, rank, s = np.linalg.lstsq(Q, b, rcond=None)
+    m = m.reshape(2,2)
 
+    print("\nThe solution matrix, M:\n",m)
 
 # MAIN
 Begin_Homework()

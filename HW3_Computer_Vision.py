@@ -253,6 +253,33 @@ def Problem_Three():
 
 
 # Problem 4 Helper Functions:
+def get_keypoint(left_img, right_img):
+    # find SIFT keypoints and descriptors
+    siftLeft = cv2.SIFT_create()
+    siftRight = cv2.SIFT_create()
+
+    pointsLeft, descLeft = siftLeft.detectAndCompute(left_img, None)
+    pointsRight, descRight = siftRight.detectAndCompute(right_img, None)
+
+    return pointsLeft, descLeft, pointsRight, descRight
+
+
+def match_keypoints(descriptor1, descriptor2):
+    # using brute force matching technique - w/ euclidean distance as selection method
+    bruteMatch = cv2.BFMatcher(cv2.NORM_L2)
+
+    # match 2 nearest neighbors per descriptor 
+    matches = bruteMatch.knnMatch(descriptor1, descriptor2, k=2)
+
+    # filter using Lowe's ratio 
+    goodMatches = []
+    
+    # look at each cv2.DMatch list and compute Lowe's ratio (threshold of 0.7)
+    for nn1, nn2 in matches: 
+        if (nn1.distance / nn2.distance) <= 0.7: 
+            goodMatches.append(nn1)
+    
+    return goodMatches
 
 def stitch(left_img, right_img):
     # extract SIFT keypoints
@@ -260,10 +287,17 @@ def stitch(left_img, right_img):
     
     # match SIFT descriptors
     good_matches = match_keypoints(descriptor1, descriptor2)
+
+    src_points = []
+    dst_points = []
+
+    for match in good_matches:
+        src_points.append(key_points1[match.queryIdx].pt)
+        dst_points.append(key_points2[match.trainIdx].pt)
     
     # find homography using ransac
-    src_pts = ...# from good_matches
-    dst_pts = ...# from good_matches
+    src_pts = np.array(src_points, dtype=np.float32) # from good_matches
+    dst_pts = np.array(dst_points, dtype=np.float32) # from good_matches
     ransac_reproj_threshold = 5.0  # Threshold in pixels
     confidence = 0.99              # Confidence level
     maxIters = 10000               # Maximum number of iterations for RANSAC
@@ -288,33 +322,50 @@ def stitch(left_img, right_img):
     result_img = output_img
 
     return result_img
-    
 
-def get_keypoint(left_img, right_img):
-    # find SIFT keypoints
-    return key_points1, descriptor1, key_points2, descriptor2
-
-
-def match_keypoints(descriptor1, descriptor2):
-    # match SIFT descriptors
-    return good_matches
 
 def Problem_Four(): 
 
-# load all 8 images
-    left_img = cv2.imread('images/field1.jpg')
-    right_img = cv2.imread('images/field2.jpg')
-    assert (left_img is not None) and (right_img is not None), 'cannot read given images'
+    # load all 8 images
+    imgList = []
+    
+    # Load in first image and downsample it
+    imgList.append(cv2.imread('images/field1.jpg'))
+    assert (imgList[0] is not None), "Cannot read images/field1.jpg"
+    height, width = imgList[0].shape[:2]
+    imgList[0] = cv2.resize(imgList[0], (width//5, height//5), interpolation=cv2.INTER_AREA)
+
+    for i in range(1,8):
+        print('reading in image', i+1)
+        # read in image
+        imgList.append(cv2.imread('images/field{}.jpg'.format(i+1)))
+        assert (imgList[i] is not None), 'Cannot read images/field{}.jpg'.format(i+1)
+
+        # downsample it
+        height, width = imgList[i].shape[:2]
+        imgList[i] = cv2.resize(imgList[i], (width//5, height//5), interpolation=cv2.INTER_AREA)
+        print("Stitching")
+        # stitch it to imgList[0]
+        temp = stitch(imgList[0], imgList[i])
+        imgList[0] = temp
+        print("fuck it we ball")
+        cv2.imshow('Panorama Image', imgList[0])
+        cv2.waitKey(0)
 
     # downsample images
-    height, width = left_img.shape[:2]
-    left_img = cv2.resize(left_img, (width//5, height//5), interpolation=cv2.INTER_AREA)
-    right_img = cv2.resize(right_img, (width//5, height//5), interpolation=cv2.INTER_AREA)
+    # height, width = left_img.shape[:2]
+    # left_img = cv2.resize(left_img, (width//5, height//5), interpolation=cv2.INTER_AREA)
+    # right_img = cv2.resize(right_img, (width//5, height//5), interpolation=cv2.INTER_AREA)
 
-    result_img = stitch(left_img, right_img)
+    #result_img = stitch(left_img, right_img)
+    result_img = imgList[0]
+    # cv2.imshow('Panorama Image', result_img)
+    # cv2.waitKey(0)
 
-    cv2.imshow('Panorama Image', result_img)
-    cv2.waitKey(0)
+    plt.figure(figsize=(15,8))
+    plt.imshow(cv2.cvtColor(imgList[0], cv2.COLOR_BGR2RGB))
+    plt.axis('off')
+    plt.show()
 
     cv2.imwrite('panorama.jpg', result_img)
 

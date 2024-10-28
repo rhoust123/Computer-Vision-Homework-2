@@ -13,9 +13,10 @@ from skimage import io
 # Read in images and call functions per problem
 def Begin_Homework():
     #Problem_One()
-    #Problem_Two()
+    Problem_Two()
     #Problem_Three()
-    Problem_Four()
+    #Problem_Four()
+    #fProblem_Five()
     
 # 2D Transformation: Compute the coordinate of a 2D point p = (10, 20)^T using a rotation of 45 degrees about the x-axis, and a translation of t = (40, -30)^T. Answer/Explain the following: 
 
@@ -145,8 +146,9 @@ def Problem_Two():
     # in a given directory. Since no path is 
     # specified, it will take current directory 
     # jpg files alone 
-    images = glob.glob('images/' + '*.jpg') 
-  
+    images = glob.glob('images/' + '*f.jpg') 
+    i = 1
+
     for filename in images: 
 
         image = cv2.imread(filename)
@@ -156,6 +158,11 @@ def Problem_Two():
             return
         else:
             grayColor = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) 
+            plt.imshow(grayColor, cmap='gray')
+            plt.axis('off')
+            plt.subplot(3, 5, i)
+        
+        i += 1
     
         # Find the chess board corners 
         # If desired number of corners are 
@@ -186,15 +193,18 @@ def Problem_Two():
         
         else: 
             print("ret was false for image:", filename)
-              
-    cv2.imshow('img', image) 
-    cv2.waitKey(0) 
-  
-    cv2.destroyAllWindows() 
+
+    plt.title("Checkerboard Calibration Images")
+    plt.tight_layout()
+    plt.show()
+
+    plt.imshow(image)
+    plt.axis('off')
+    plt.title("Checkerboard Corners")
+    plt.show() 
     
     h, w = image.shape[:2] 
     
-    print("Performing camera calibration")
     # Perform camera calibration by 
     # passing the value of above found out 3D points (threedpoints) 
     # and its corresponding pixel coordinates of the 
@@ -208,12 +218,14 @@ def Problem_Two():
     
     
     # Displaying required output 
-    print(" Camera matrix:") 
+    print("Intrinsic Camera matrix:") 
     print(matrix) 
     
-    print("\n Distortion coefficient:") 
+    print("\n 5 Distortion Parameters:") 
     print(distortion) 
     
+    print("\n Extrinsic Matrix Values, as Rotation and Translation Vectors:\n")
+
     print("\n Rotation Vectors:") 
     print(r_vecs) 
     
@@ -263,7 +275,6 @@ def get_keypoint(left_img, right_img):
 
     return pointsLeft, descLeft, pointsRight, descRight
 
-
 def match_keypoints(descriptor1, descriptor2):
     # using brute force matching technique - w/ euclidean distance as selection method
     bruteMatch = cv2.BFMatcher(cv2.NORM_L2)
@@ -271,7 +282,6 @@ def match_keypoints(descriptor1, descriptor2):
     # match 2 nearest neighbors per descriptor 
     matches = bruteMatch.knnMatch(descriptor1, descriptor2, k=2)
 
-    # filter using Lowe's ratio 
     goodMatches = []
     
     # look at each cv2.DMatch list and compute Lowe's ratio (threshold of 0.7)
@@ -296,8 +306,8 @@ def stitch(left_img, right_img):
         dst_points.append(key_points2[match.trainIdx].pt)
     
     # find homography using ransac
-    src_pts = np.array(src_points, dtype=np.float32) # from good_matches
-    dst_pts = np.array(dst_points, dtype=np.float32) # from good_matches
+    src_pts = np.array(src_points) # from good_matches
+    dst_pts = np.array(dst_points) # from good_matches
     ransac_reproj_threshold = 5.0  # Threshold in pixels
     confidence = 0.99              # Confidence level
     maxIters = 10000               # Maximum number of iterations for RANSAC
@@ -323,7 +333,6 @@ def stitch(left_img, right_img):
 
     return result_img
 
-
 def Problem_Four(): 
 
     # load all 8 images
@@ -348,19 +357,11 @@ def Problem_Four():
         # stitch it to imgList[0]
         temp = stitch(imgList[0], imgList[i])
         imgList[0] = temp
-        print("fuck it we ball")
+
         cv2.imshow('Panorama Image', imgList[0])
         cv2.waitKey(0)
 
-    # downsample images
-    # height, width = left_img.shape[:2]
-    # left_img = cv2.resize(left_img, (width//5, height//5), interpolation=cv2.INTER_AREA)
-    # right_img = cv2.resize(right_img, (width//5, height//5), interpolation=cv2.INTER_AREA)
-
-    #result_img = stitch(left_img, right_img)
     result_img = imgList[0]
-    # cv2.imshow('Panorama Image', result_img)
-    # cv2.waitKey(0)
 
     plt.figure(figsize=(15,8))
     plt.imshow(cv2.cvtColor(imgList[0], cv2.COLOR_BGR2RGB))
@@ -368,6 +369,72 @@ def Problem_Four():
     plt.show()
 
     cv2.imwrite('panorama.jpg', result_img)
+
+def Problem_Five():
+
+    img1 = cv2.imread('images/left.jpg')
+    img2 = cv2.imread('images/right.jpg')
+    assert (img1 is not None) and (img2 is not None), 'cannot read given images'
+    
+    # camera intrinsic matrix
+    f, cx, cy = 1000, 1024, 768 
+    K = np.array([[f, 0, cx], [0, f, cy], [0, 0, 1]])
+
+    # extract SIFT keypoints
+    key_points1, descriptor1, key_points2, descriptor2 = get_keypoint(img1, img2)
+    
+    # match SIFT descriptors
+    good_matches = match_keypoints(descriptor1, descriptor2)
+
+    # Compute pts1 and pts2 in the same way src_points and dst_points were computed in problem 4
+    src_points = []
+    dst_points = []
+
+    for match in good_matches:
+        src_points.append(key_points1[match.queryIdx].pt)
+        dst_points.append(key_points2[match.trainIdx].pt)
+    
+    pts1 = np.array(src_points) # from good_matches
+    pts2 = np.array(dst_points) # from good_matches
+
+    # calculate fundamental matrix (use same ransac params as problem 4 template)
+    F, inlier_mask = cv2.findFundamentalMat(pts1, pts2, cv2.FM_RANSAC, 5, 0.99)
+    print(f'* F = {F}')
+    print(f'* number of inliers = {sum(inlier_mask.ravel())}')
+
+    # show matched inlier features
+    img_matched = cv2.drawMatches(img1, key_points1, img2, key_points2, good_matches, None, None, None,
+                                matchesMask=inlier_mask.ravel().tolist()) # Remove `matchesMask` if you want to show all putative matches
+    cv2.namedWindow('Fundamental Matrix Estimation', cv2.WINDOW_NORMAL)
+    cv2.imshow('Fundamental Matrix Estimation', img_matched)
+    cv2.waitKey(0)
+    
+    # compute relative camera pose 
+    E = K.T @ F @ K # essential matrix
+    positive_num, R, t, positive_mask = cv2.recoverPose(E, pts1, pts2, cameraMatrix=K)
+    print(f'* R = {R}')
+    print(f'* t = {t}')
+
+    # reconstruct 3D points (triangulation)
+    P0 = K @ np.eye(3, 4, dtype=np.float32)
+    Rt = np.hstack((R, t))
+    P1 = K @ Rt
+    pts1_inlier = pts1[inlier_mask.ravel() == 1] # select inliers
+    pts2_inlier = pts2[inlier_mask.ravel() == 1] # select inliers
+
+    X = cv2.triangulatePoints(P0, P1, pts1_inlier.T, pts2_inlier.T)
+    X /= X[3]
+    X = X.T
+
+    # visualize 3D points
+    ax = plt.figure(layout='tight').add_subplot(projection='3d')
+    ax.plot(X[:,0], X[:,1], X[:,2], 'ro')
+    ax.set_box_aspect([1,1,1])
+    ax.set_xlabel('X [m]')
+    ax.set_ylabel('Y [m]')
+    ax.set_zlabel('Z [m]')
+    ax.grid(True)
+    plt.show()
 
 # MAIN
 Begin_Homework()

@@ -13,9 +13,9 @@ from skimage import io
 # Read in images and call functions per problem
 def Begin_Homework():
     #Problem_One()
-    Problem_Two()
+    #Problem_Two()
     #Problem_Three()
-    #Problem_Four()
+    Problem_Four()
     #fProblem_Five()
     
 # 2D Transformation: Compute the coordinate of a 2D point p = (10, 20)^T using a rotation of 45 degrees about the x-axis, and a translation of t = (40, -30)^T. Answer/Explain the following: 
@@ -297,6 +297,8 @@ def stitch(left_img, right_img):
     
     # match SIFT descriptors
     good_matches = match_keypoints(descriptor1, descriptor2)
+
+    print(len(good_matches))
 
     src_points = []
     dst_points = []
